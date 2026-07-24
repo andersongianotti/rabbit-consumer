@@ -2,6 +2,7 @@ package com.example.rabbitconsumer.config;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.MessageConverter;
@@ -49,10 +50,7 @@ class RabbitMQConfigTest {
 
     @Test
     void testTemplateBean() {
-        ConnectionFactory connectionFactory = org.springframework.amqp.rabbit.connection.ConnectionFactory.builder()
-                .host("localhost")
-                .port(5672)
-                .build();
+        ConnectionFactory connectionFactory = new CachingConnectionFactory("localhost", 5672);
         
         AmqpTemplate template = rabbitMQConfig.template(connectionFactory);
         

@@ -11,7 +11,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
-import org.springframework.util.concurrent.ListenableFuture;
+
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,7 +26,7 @@ class KafkaProducerTest {
     private KafkaTemplate<String, Message> kafkaTemplate;
 
     @Mock
-    private ListenableFuture<SendResult<String, Message>> future;
+    private CompletableFuture<SendResult<String, Message>> future;
 
     @InjectMocks
     private KafkaProducer kafkaProducer;
@@ -65,8 +66,8 @@ class KafkaProducerTest {
 
         ProducerRecord<String, Message> capturedRecord = recordCaptor.getValue();
         
-        boolean hasTypeIdHeader = capturedRecord.headers().headers("__TypeId__").length > 0;
-        boolean hasSourceHeader = capturedRecord.headers().headers("source").length > 0;
+        boolean hasTypeIdHeader = capturedRecord.headers().lastHeader("__TypeId__") != null;
+        boolean hasSourceHeader = capturedRecord.headers().lastHeader("source") != null;
         
         assertEquals(true, hasTypeIdHeader);
         assertEquals(true, hasSourceHeader);

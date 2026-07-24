@@ -1,7 +1,6 @@
 package com.example.rabbitconsumer.config;
 
 import com.example.rabbitconsumer.model.Message;
-import org.apache.kafka.clients.producer.ProducerFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
@@ -33,9 +32,9 @@ class KafkaConfigTest {
         ProducerFactory<String, Message> producerFactory = kafkaConfig.producerFactory();
         
         assertNotNull(producerFactory);
-        assertNotNull(producerFactory.configurationProps());
+        assertNotNull(producerFactory.getConfigurationProperties());
         
-        java.util.Map<String, Object> config = producerFactory.configurationProps();
+        java.util.Map<String, Object> config = producerFactory.getConfigurationProperties();
         assertEquals("localhost:9092", config.get(org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG));
     }
 }
