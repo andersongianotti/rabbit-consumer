@@ -16,6 +16,10 @@
 	<description>Microservice to consume RabbitMQ messages</description>
 	<properties>
 		<java.version>21</java.version>
+		<sonar.projectKey>andersongianotti_rabbit-consumer</sonar.projectKey>
+		<sonar.projectName>rabbit-consumer</sonar.projectName>
+		<sonar.organization>andersongianotti</sonar.organization>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -66,6 +70,11 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>5.1.0.4751</version>
 			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>
