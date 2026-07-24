@@ -1,15 +1,19 @@
 package com.example.rabbitconsumer.producer;
 
 import com.example.rabbitconsumer.model.Message;
+import com.example.rabbitconsumer.util.KafkaHeaderUtils;
+import com.example.rabbitconsumer.util.MessageFormatter;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.header.internals.RecordHeader;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-
 @Service
 public class KafkaProducer {
+
+    public static final String TOPIC = "jsonTopic";
+    public static final String TYPE_ID_HEADER = "__TypeId__";
+    public static final String SOURCE_HEADER = "source";
+    public static final String SOURCE = "rabbitmq";
 
     private final KafkaTemplate<String, Message> kafkaTemplate;
 
@@ -19,16 +23,13 @@ public class KafkaProducer {
 
     public void enviarMensagem(Message mensagem) {
         ProducerRecord<String, Message> record =
-                new ProducerRecord<>("jsonTopic", mensagem);
+                new ProducerRecord<>(TOPIC, mensagem);
 
-        record.headers().add(new RecordHeader("__TypeId__",
-                Message.class.getName().getBytes(StandardCharsets.UTF_8)));
-
-        record.headers().add(new RecordHeader("source",
-                "rabbitmq".getBytes(StandardCharsets.UTF_8)));
+        KafkaHeaderUtils.addStringHeader(record, TYPE_ID_HEADER, Message.class.getName());
+        KafkaHeaderUtils.addStringHeader(record, SOURCE_HEADER, SOURCE);
 
         kafkaTemplate.send(record);
 
-        System.out.println("Kafka publicou: " + mensagem.getMensagemId() + " - " + mensagem.getMessage());
+        System.out.println("Kafka publicou: " + MessageFormatter.summary(mensagem));
     }
 }
