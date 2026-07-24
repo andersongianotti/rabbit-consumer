@@ -18,6 +18,7 @@
 		<java.version>21</java.version>
 		<sonar.projectKey>andersongianotti_rabbit-consumer</sonar.projectKey>
 		<sonar.projectName>rabbit-consumer</sonar.projectName>
+		<sonar.organization>andersongianotti</sonar.organization>
 		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencies>
