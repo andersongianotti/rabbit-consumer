@@ -13,8 +13,12 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,9 +28,6 @@ class KafkaProducerTest {
 
     @Mock
     private KafkaTemplate<String, Message> kafkaTemplate;
-
-    @Mock
-    private CompletableFuture<SendResult<String, Message>> future;
 
     @InjectMocks
     private KafkaProducer kafkaProducer;
@@ -42,7 +43,8 @@ class KafkaProducerTest {
 
     @Test
     void testEnviarMensagem() {
-        when(kafkaTemplate.send(any(ProducerRecord.class))).thenReturn(future);
+        when(kafkaTemplate.send(any(ProducerRecord.class)))
+                .thenReturn(CompletableFuture.completedFuture(null));
 
         kafkaProducer.enviarMensagem(testMessage);
 
@@ -57,7 +59,8 @@ class KafkaProducerTest {
 
     @Test
     void testEnviarMensagemWithHeaders() {
-        when(kafkaTemplate.send(any(ProducerRecord.class))).thenReturn(future);
+        when(kafkaTemplate.send(any(ProducerRecord.class)))
+                .thenReturn(CompletableFuture.completedFuture(null));
 
         kafkaProducer.enviarMensagem(testMessage);
 
@@ -65,25 +68,41 @@ class KafkaProducerTest {
         verify(kafkaTemplate).send(recordCaptor.capture());
 
         ProducerRecord<String, Message> capturedRecord = recordCaptor.getValue();
-        
-        boolean hasTypeIdHeader = capturedRecord.headers().lastHeader("__TypeId__") != null;
-        boolean hasSourceHeader = capturedRecord.headers().lastHeader("source") != null;
-        
-        assertEquals(true, hasTypeIdHeader);
-        assertEquals(true, hasSourceHeader);
+
+        boolean hasTypeIdHeader = capturedRecord.headers().headers("__TypeId__").iterator().hasNext();
+        boolean hasSourceHeader = capturedRecord.headers().headers("source").iterator().hasNext();
+
+        assertTrue(hasTypeIdHeader);
+        assertTrue(hasSourceHeader);
     }
 
     @Test
     void testEnviarMensagemWithNullMessage() {
-        Message nullMessage = new Message();
-        when(kafkaTemplate.send(any(ProducerRecord.class))).thenReturn(future);
+        assertThrows(IllegalArgumentException.class,
+                () -> kafkaProducer.enviarMensagem(null));
 
-        kafkaProducer.enviarMensagem(nullMessage);
+        verify(kafkaTemplate, org.mockito.Mockito.never()).send(any(ProducerRecord.class));
+    }
 
-        ArgumentCaptor<ProducerRecord<String, Message>> recordCaptor = ArgumentCaptor.forClass(ProducerRecord.class);
-        verify(kafkaTemplate).send(recordCaptor.capture());
+    @Test
+    void testEnviarMensagemReturnsTemplateFuture() {
+        CompletableFuture<SendResult<String, Message>> expected = CompletableFuture.completedFuture(null);
+        when(kafkaTemplate.send(any(ProducerRecord.class))).thenReturn(expected);
 
-        ProducerRecord<String, Message> capturedRecord = recordCaptor.getValue();
-        assertEquals("jsonTopic", capturedRecord.topic());
+        CompletableFuture<SendResult<String, Message>> actual = kafkaProducer.enviarMensagem(testMessage);
+
+        assertSame(expected, actual);
+    }
+
+    @Test
+    void testEnviarMensagemPropagatesSendFailure() {
+        CompletableFuture<SendResult<String, Message>> failed = new CompletableFuture<>();
+        failed.completeExceptionally(new RuntimeException("broker down"));
+        when(kafkaTemplate.send(any(ProducerRecord.class))).thenReturn(failed);
+
+        CompletableFuture<SendResult<String, Message>> result = kafkaProducer.enviarMensagem(testMessage);
+
+        assertTrue(result.isCompletedExceptionally());
+        assertThrows(ExecutionException.class, result::get);
     }
 }
