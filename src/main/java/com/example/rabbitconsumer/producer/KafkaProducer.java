@@ -3,13 +3,21 @@ package com.example.rabbitconsumer.producer;
 import com.example.rabbitconsumer.model.Message;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class KafkaProducer {
+
+    private static final Logger log = LoggerFactory.getLogger(KafkaProducer.class);
+
+    static final String TOPIC = "jsonTopic";
 
     private final KafkaTemplate<String, Message> kafkaTemplate;
 
@@ -17,9 +25,15 @@ public class KafkaProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void enviarMensagem(Message mensagem) {
+    public CompletableFuture<SendResult<String, Message>> enviarMensagem(Message mensagem) {
+        if (mensagem == null) {
+            throw new IllegalArgumentException("Cannot publish a null message to Kafka");
+        }
+
+        String mensagemId = mensagem.getMensagemId();
+
         ProducerRecord<String, Message> record =
-                new ProducerRecord<>("jsonTopic", mensagem);
+                new ProducerRecord<>(TOPIC, mensagem);
 
         record.headers().add(new RecordHeader("__TypeId__",
                 Message.class.getName().getBytes(StandardCharsets.UTF_8)));
@@ -27,8 +41,16 @@ public class KafkaProducer {
         record.headers().add(new RecordHeader("source",
                 "rabbitmq".getBytes(StandardCharsets.UTF_8)));
 
-        kafkaTemplate.send(record);
+        CompletableFuture<SendResult<String, Message>> future = kafkaTemplate.send(record);
 
-        System.out.println("Kafka publicou: " + mensagem.getMensagemId() + " - " + mensagem.getMessage());
+        future.whenComplete((result, ex) -> {
+            if (ex != null) {
+                log.error("Failed to publish message {} to Kafka topic {}", mensagemId, TOPIC, ex);
+            } else {
+                log.info("Kafka published message {} to topic {}", mensagemId, TOPIC);
+            }
+        });
+
+        return future;
     }
 }

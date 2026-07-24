@@ -49,10 +49,8 @@ class RabbitMQConfigTest {
 
     @Test
     void testTemplateBean() {
-        ConnectionFactory connectionFactory = org.springframework.amqp.rabbit.connection.ConnectionFactory.builder()
-                .host("localhost")
-                .port(5672)
-                .build();
+        ConnectionFactory connectionFactory =
+                new org.springframework.amqp.rabbit.connection.CachingConnectionFactory("localhost", 5672);
         
         AmqpTemplate template = rabbitMQConfig.template(connectionFactory);
         
